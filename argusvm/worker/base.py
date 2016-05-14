@@ -194,3 +194,8 @@ class Command(Task):
                     time.sleep(retry_interval)
                 else:
                     raise
+
+    @abc.abstractmethod
+    def _work(self):
+        """Override this with your desired procedures."""
+        pass
