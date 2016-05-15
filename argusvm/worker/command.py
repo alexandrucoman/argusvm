@@ -51,13 +51,13 @@ class CreateEnvironment(worker_base.Command):
             self.logger.warning("The virtual environment already exists. %s",
                                 self._venv)
         else:
-            self._execute(["sudo", "-u", self.args.user, "virtualenv",
+            self._execute(["sudo", "-u", self.args["user"], "virtualenv",
                            self._venv, "--python", "/usr/bin/python2.7"])
 
     def _epilogue(self):
         """Executed once after the command running."""
         if self._setup_venv:
-            self._execute(["sudo", "-u", self.args.user,
+            self._execute(["sudo", "-u", self.args["user"],
                            self._pip, "install", "pip", "--upgrade"])
 
 
@@ -74,31 +74,31 @@ class InstallTempest(worker_base.Command):
     def _prologue(self):
         """Executed once before the command running."""
         super(InstallTempest, self)._prologue()
-        branch = self._executor.config.get('tempest_branch')
+        branch = self._executor.args.get('tempest_branch')
 
         if os.path.isdir(self._clone_path):
             self.logger.info("Removing the directory %r", self._clone_path)
             shutil.rmtree(self._clone_path)
 
-        self._execute(["sudo", "-u", self.args.user, "git", "clone",
+        self._execute(["sudo", "-u", self.args["user"], "git", "clone",
                        self.REPO, os.path.basename(self._clone_path)],
                       cwd=os.path.dirname(self._clone_path))
-        self._execute(["sudo", "-u", self.args.user, "git", "checkout",
+        self._execute(["sudo", "-u", self.args["user"], "git", "checkout",
                        branch],
                       cwd=self._clone_path)
 
     def _work(self):
         """Install the tempest package and its requirements."""
-        self._execute(["sudo", "-u", self.args.user, self._pip, "install",
+        self._execute(["sudo", "-u", self.args["user"], self._pip, "install",
                        "-r", "requirements.txt"], cwd=self._clone_path)
-        self._execute(["sudo", "-u", self.args.user, self._pip, "install",
+        self._execute(["sudo", "-u", self.args["user"], self._pip, "install",
                        "-r", "test-requirements.txt"], cwd=self._clone_path)
-        self._execute(["sudo", "-u", self.args.user, self._python,
+        self._execute(["sudo", "-u", self.args["user"], self._python,
                        "setup.py", "install"], cwd=self._clone_path)
 
     def _epilogue(self):
         """Executed once after the command running."""
-        self._execute(["sudo", "-u", self.args.user, self._python,
+        self._execute(["sudo", "-u", self.args["user"], self._python,
                        "-c", "import tempest"])
         # TODO(alexandrucoman): Create the config file
 
@@ -116,27 +116,27 @@ class InstallArgusCi(worker_base.Command):
     def _prologue(self):
         """Executed once before the command running."""
         super(InstallArgusCi, self)._prologue()
-        branch = self._executor.config.get('argus_branch')
+        branch = self._executor.args.get('argus_branch')
 
         if os.path.isdir(self._clone_path):
             self.logger.info("Removing the directory %r", self._clone_path)
             shutil.rmtree(self._clone_path)
 
-        self._execute(["sudo", "-u", self.args.user, "git", "clone",
+        self._execute(["sudo", "-u", self.args["user"], "git", "clone",
                        self.REPO, self._clone_path])
-        self._execute(["sudo", "-u", self.args.user, "git", "checkout",
+        self._execute(["sudo", "-u", self.args["user"], "git", "checkout",
                        branch], cwd=self._clone_path)
 
     def _work(self):
         """Install the argus-ci framework and its requirements."""
-        self._execute(["sudo", "-u", self.args.user, self._pip, "install",
+        self._execute(["sudo", "-u", self.args["user"], self._pip, "install",
                        "-r", "requirements.txt"], cwd=self._clone_path)
-        self._execute(["sudo", "-u", self.args.user, self._python, "setup.py",
-                       "install"], cwd=self._clone_path)
+        self._execute(["sudo", "-u", self.args["user"], self._python,
+                       "setup.py", "install"], cwd=self._clone_path)
 
     def _epilogue(self):
         """Executed once after the command running."""
-        self._execute(["sudo", "-u", self.args.user, self._python,
+        self._execute(["sudo", "-u", self.args["user"], self._python,
                        "-c", "import argus"])
         # TODO(alexandrucoman): Create the config file
         super(InstallArgusCi, self)._epilogue()

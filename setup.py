@@ -15,6 +15,6 @@ setup(
     author="Cloudbase Solutions Srl",
     url="http://www.cloudbase.it/",
     packages=["argusvm"],
-    scripts=["scripts/argusvm"],
+    scripts=["scripts/arguscli"],
     requires=["six"]
 )

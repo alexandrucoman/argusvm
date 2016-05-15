@@ -105,10 +105,10 @@ class Command(Task):
 
     def _prologue(self):
         """Executed once before the command running."""
-        self._attemts = self._executor.config.get('attempts', 1)
-        self._retry_interval = self._executor.config.get('retry_interval', 0)
-        self._setup_venv = self._executor.config.get("setup_venv")
-        self._venv = self._executor.config.get("venv")
+        self._attemts = self._executor.args.get('attempts', 1)
+        self._retry_interval = self._executor.args.get('retry_interval', 0)
+        self._setup_venv = self._executor.args.get("setup_venv")
+        self._venv = self._executor.args.get("venv")
 
         if self._setup_venv:
             self._python = os.path.join(self._venv, "bin", "python")

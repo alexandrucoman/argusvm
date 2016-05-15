@@ -94,8 +94,8 @@ class Group(object):
 
             commands = [
                 (ExampleOne, "main_parser"),
-                (ExampleTwo, "main_parser),
-                (ExampleThree, "second_parser")
+                (ExampleTwo, "main_parser"),
+                (ExampleThree, "second_parser"),
             ]
 
             # ...
@@ -171,8 +171,8 @@ class Application(Group, base_worker.Worker):
 
             commands = [
                 (ExampleOne, "main_parser"),
-                (ExampleTwo, "main_parser),
-                (ExampleThree, "second_parser")
+                (ExampleTwo, "main_parser"),
+                (ExampleThree, "second_parser"),
             ]
 
             # ...
@@ -198,7 +198,7 @@ class Application(Group, base_worker.Worker):
     def logger(self):
         """Expose the logger object."""
         if not self._logger:
-            level = (logging.DEBUG if self.args.verbose
+            level = (logging.DEBUG if self.args["verbose"]
                      else logging.ERROR)
             self._logger = self._get_logger(__name__, level)
         return self._logger
@@ -255,7 +255,7 @@ class Application(Group, base_worker.Worker):
     def _prologue(self):
         """Executed once before the command running."""
         super(Application, self)._prologue()
-        self._args = self._parser.parse_args(self.command_line)
+        self._args = vars(self._parser.parse_args(self.command_line))
 
     def _work(self):
         """Parse the command line."""
@@ -263,7 +263,7 @@ class Application(Group, base_worker.Worker):
             self.logger.error("No command line arguments was provided.")
             return
 
-        work_function = getattr(self.args, "work", None)
+        work_function = self.args.get("work", None)
         if not work_function:
             self.logger.error("No handle was provided for the "
                               "required action. (%s)", self.args)

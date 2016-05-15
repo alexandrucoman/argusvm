@@ -47,9 +47,6 @@ class ArgusClient(client_base.Application):
 
 def main():
     """Run the Jarvis command line application."""
-    if len(sys.argv) == 1:
-        sys.argv.append("install")
-
     argusvm = ArgusClient(sys.argv[1:])
     argusvm.run()
 
