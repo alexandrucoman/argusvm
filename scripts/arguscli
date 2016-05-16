@@ -14,7 +14,7 @@ class ArgusClient(client_base.Application):
     """Command line application for deploying Argus-Ci."""
 
     commands = [
-        (group.InstallArgusCi, "commands"),
+        (group.InstallGroup, "commands"),
     ]
 
     def setup(self):

@@ -60,13 +60,13 @@ class Task(Worker):
 
     def task_done(self, result):
         """What to execute after successfully finished processing a task."""
-        callback = getattr(self._executor, "on_task_done")
+        callback = getattr(self._executor, "task_done")
         if callback:
             callback(self, result)
 
     def task_fail(self, exc):
         """What to do when the program fails processing a task."""
-        callback = getattr(self._executor, "on_task_fail")
+        callback = getattr(self._executor, "task_fail")
         if callback:
             callback(self, exc)
 

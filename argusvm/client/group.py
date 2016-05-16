@@ -6,6 +6,28 @@ from argusvm.client import base as client_base
 from argusvm.worker import command
 
 
+class InstallArgusCiDependences(client_base.Command):
+
+    """Install the Argus-CI dependences on the current machine."""
+
+    def setup(self):
+        """Extend the parser configuration in order to expose all
+        the received commands.
+        """
+        parser = self._parser.add_parser(
+            "dependences",
+            help="Install the Argus-CI dependences on the current machine.")
+
+        parser.set_defaults(work=self.run)
+
+    def _work(self):
+        """Install the Argus-CI on the current machine."""
+
+        # Create the virtual environment for Argus-Ci
+        task = command.SetupEnvironment(self)
+        return task.run()
+
+
 class InstallArgusCi(client_base.Command):
 
     """Install the Argus-CI on the current machine."""
@@ -15,7 +37,7 @@ class InstallArgusCi(client_base.Command):
         the received commands.
         """
         parser = self._parser.add_parser(
-            "install",
+            "argus",
             help="Install the Argus-CI on the current machine.")
 
         parser.add_argument("--user", dest="user", default="root",
@@ -38,9 +60,9 @@ class InstallArgusCi(client_base.Command):
             help="Install the requirements on the global environment")
         group.add_argument(
             "--venv", dest="venv", type=str,
-            default=os.path.expanduser("~/argus-env"),
+            default=os.path.expanduser("~/.argus/env/"),
             help="The path for the virtual environment. "
-                 "(Default: ~/argus-env)"
+                 "(Default: ~/.argus/env/)"
         )
 
         parser.set_defaults(work=self.run)
@@ -48,8 +70,6 @@ class InstallArgusCi(client_base.Command):
     def _work(self):
         """Install the Argus-CI on the current machine."""
         tasks = (
-            # Install all the requirements for Argus-Ci
-            command.SetupEnvironment,
             # Create the virtual environment for Argus-Ci
             command.CreateEnvironment,
             # Install Tempest and its requirements
@@ -60,3 +80,24 @@ class InstallArgusCi(client_base.Command):
 
         for task in tasks:
             task(self).run()
+
+
+class InstallGroup(client_base.Group):
+
+    """Group for all install commands."""
+
+    commands = [
+        (InstallArgusCi, "install"),
+        (InstallArgusCiDependences, "install"),
+    ]
+
+    def setup(self):
+        """Extend the parser configuration in order to expose all
+        the received commands.
+        """
+        parser = self._parser.add_parser(
+            "install",
+            help="Install Argus-CI resources on the current machine.")
+
+        install_action = parser.add_subparsers()
+        self._register_parser("install", install_action)
