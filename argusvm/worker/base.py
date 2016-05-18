@@ -39,59 +39,20 @@ class Worker(object):
 
 
 @six.add_metaclass(abc.ABCMeta)
-class Task(Worker):
+class Command(Worker):
 
-    """Contract class for all the commands and clients."""
-
-    def __init__(self, executor=None):
-        super(Task, self).__init__()
-        self._executor = executor
-        self._name = self.__class__.__name__
-
-    @property
-    def name(self):
-        """Return the name of the task."""
-        return self._name
-
-    @abc.abstractmethod
-    def _work(self):
-        """Override this with your desired procedures."""
-        pass
-
-    def task_done(self, result):
-        """What to execute after successfully finished processing a task."""
-        callback = getattr(self._executor, "task_done")
-        if callback:
-            callback(self, result)
-
-    def task_fail(self, exc):
-        """What to do when the program fails processing a task."""
-        callback = getattr(self._executor, "task_fail")
-        if callback:
-            callback(self, exc)
-
-    def run(self):
-        """Run the command."""
-        result = None
-        self._prologue()
-        try:
-            result = self._work()
-        except Exception as exc:
-            self.task_fail(exc)
-        else:
-            self.task_done(result)
-        self._epilogue()
-        return result
-
-
-@six.add_metaclass(abc.ABCMeta)
-class Command(Task):
+    """Contract class for all the commands."""
 
     def __init__(self, executor):
-        super(Command, self).__init__(executor)
-        self._attemts, self._retry_interval = None, None
-        self._venv, self._setup_venv = None, None
-        self._python, self._pip = None, None
+        super(Command, self).__init__()
+
+        self._executor = executor
+        self._attemts = None
+        self._retry_interval = None
+        self._venv = None
+        self._setup_venv = None
+        self._python = None
+        self._pip = None
 
     @property
     def args(self):
@@ -103,19 +64,10 @@ class Command(Task):
         """Expose the logger object."""
         return self._executor.logger
 
-    def _prologue(self):
-        """Executed once before the command running."""
-        self._attemts = self._executor.args.get('attempts', 1)
-        self._retry_interval = self._executor.args.get('retry_interval', 0)
-        self._setup_venv = self._executor.args.get("setup_venv")
-        self._venv = self._executor.args.get("venv")
-
-        if self._setup_venv:
-            self._python = os.path.join(self._venv, "bin", "python")
-            self._pip = os.path.join(self._venv, "bin", "pip")
-        else:
-            self._python = "/usr/bin/python"
-            self._pip = "/usr/local/bin/pip"
+    @property
+    def name(self):
+        """Return the name of the task."""
+        return self.__class__.__name__
 
     def _execute(self, command, **kwargs):
         """Helper method to shell out and execute a command through subprocess.
@@ -195,7 +147,46 @@ class Command(Task):
                 else:
                     raise
 
+    def _done(self, result):
+        """What to execute after successfully finished processing a task."""
+        callback = getattr(self._executor, "on_task_done", None)
+        if callback:
+            callback(self, result)
+
+    def _fail(self, exc):
+        """What to do when the program fails processing a task."""
+        callback = getattr(self._executor, "on_task_fail", None)
+        if callback:
+            callback(self, exc)
+
+    def _prologue(self):
+        """Executed once before the command running."""
+        self._attemts = self._executor.args.get('attempts', 1)
+        self._retry_interval = self._executor.args.get('retry_interval', 0)
+        self._setup_venv = self._executor.args.get("setup_venv")
+        self._venv = self._executor.args.get("venv")
+
+        if self._setup_venv:
+            self._python = os.path.join(self._venv, "bin", "python")
+            self._pip = os.path.join(self._venv, "bin", "pip")
+        else:
+            self._python = "/usr/bin/python"
+            self._pip = "/usr/local/bin/pip"
+
     @abc.abstractmethod
     def _work(self):
         """Override this with your desired procedures."""
         pass
+
+    def run(self):
+        """Run the command."""
+        result = None
+        try:
+            self._prologue()
+            result = self._work()
+            self._epilogue()
+        except Exception as exc:
+            self._fail(exc)
+        else:
+            self._done(result)
+        return result

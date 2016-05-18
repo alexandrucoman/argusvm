@@ -18,6 +18,7 @@ class Command(base_worker.Worker):
         super(Command, self).__init__()
         self._args = None
         self._command_line = None
+        self._logger = None
         self._parent = parent
         self._parser = parser
 
@@ -43,6 +44,13 @@ class Command(base_worker.Worker):
 
         return self._command_line
 
+    @property
+    def logger(self):
+        """Expose the logger object."""
+        if self._logger is None:
+            self._logger = self._discover_attribute("logger")
+        return self._logger
+
     def _discover_attribute(self, attribute):
         """Search for the received attribute in the command tree."""
         command_tree = [self.parent]
@@ -60,6 +68,15 @@ class Command(base_worker.Worker):
     def setup(self):
         """Extend the parser configuration in order to expose this command."""
         pass
+
+    def on_task_done(self, task, result):
+        """What to execute after successfully finished processing a task."""
+        self.logger.info("Task %s sucessfully runed. (Result: %s)",
+                         task.name, result)
+
+    def on_task_fail(self, task, exc):
+        """What to do when the program fails processing a task."""
+        self.logger.error("Task %s failed with: %s", task.name, exc)
 
     @abc.abstractmethod
     def _work(self):
@@ -206,19 +223,6 @@ class Application(Group, base_worker.Worker):
 
         logger.setLevel(level)
         return logger
-
-    def task_done(self, task, result):
-        """What to execute after successfully finished processing a task."""
-        self.logger.info("Task %s sucessfully runed. (Result: %s)",
-                         task, result)
-
-    def task_fail(self, task, exc):
-        """What to do when the program fails processing a task."""
-        self.logger.error("Task %s failed with: %s", task, exc)
-
-    def interrupted(self, task):
-        """What to execute when keyboard interrupts arrive."""
-        self.logger.warning("Task %s was interrupted by the user.", task)
 
     @abc.abstractmethod
     def setup(self):
