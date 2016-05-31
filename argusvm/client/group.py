@@ -32,6 +32,10 @@ class InstallArgusCi(client_base.Command):
 
     """Install the Argus-CI on the current machine."""
 
+    def __init__(self, parent, parser):
+        super(InstallArgusCi, self).__init__(parent, parser)
+        self.__status = True
+
     def setup(self):
         """Extend the parser configuration in order to expose all
         the received commands.
@@ -59,13 +63,16 @@ class InstallArgusCi(client_base.Command):
             "--no-venv", dest="setup_venv", action="store_false",
             help="Install the requirements on the global environment")
         group.add_argument(
-            "--venv", dest="venv", type=str,
-            default=os.path.expanduser("~/.argus/env/"),
-            help="The path for the virtual environment. "
-                 "(Default: ~/.argus/env/)"
+            "--build", dest="build", type=str,
+            help="The unique identifier for the current job."
         )
 
         parser.set_defaults(work=self.run)
+
+    def on_task_fail(self, task, exc):
+        """Callback for task fail."""
+        self.__status = False
+        self.logger.error("Task %s failed: %s", task.name, exc)
 
     def _work(self):
         """Install the Argus-CI on the current machine."""
@@ -79,7 +86,11 @@ class InstallArgusCi(client_base.Command):
         )
 
         for task in tasks:
+            if not self.__status:
+                break
             task(self).run()
+
+        return self.__status
 
 
 class InstallGroup(client_base.Group):
