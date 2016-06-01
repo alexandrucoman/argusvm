@@ -2,8 +2,8 @@
 
 import os
 
-from argusvm.client import base as client_base
-from argusvm.worker import command
+from arestor.client import base as client_base
+from arestor.worker import command
 
 
 class InstallArgusCiDependences(client_base.Command):

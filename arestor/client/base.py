@@ -7,7 +7,7 @@ import abc
 import sys
 import logging
 
-from argusvm.worker import base as base_worker
+from arestor.worker import base as base_worker
 
 
 class Command(base_worker.Worker):
