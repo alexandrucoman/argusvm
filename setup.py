@@ -14,7 +14,8 @@ setup(
     long_description=open("README.md").read(),
     author="Cloudbase Solutions Srl",
     url="http://www.cloudbase.it/",
-    packages=["arestor"],
+    packages=["arestor", "arestor.client", "arestor.resources",
+              "arestor.worker"],
     scripts=["scripts/arestor"],
     requires=["six"]
 )
