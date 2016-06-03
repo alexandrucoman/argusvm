@@ -17,5 +17,5 @@ setup(
     packages=["arestor", "arestor.client", "arestor.resources",
               "arestor.worker"],
     scripts=["scripts/arestor"],
-    requires=["six"]
+    requires=["six", "python-neutronclient"]
 )

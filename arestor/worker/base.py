@@ -58,15 +58,12 @@ class Command(Worker):
 
     def __init__(self, executor):
         super(Command, self).__init__()
-
         self._executor = executor
-
         self._attemts = self._executor.args.get('attempts', 1)
         self._retry_interval = self._executor.args.get('retry_interval', 0)
-        self._setup_venv = self._executor.args.get("setup_venv")
-        self._venv = os.path.join("/tmp", "argus-env",
-                                  self._executor.args.get("build"))
 
+        build = self._executor.args.get("build", None)
+        self._venv = os.path.join("/tmp/argus-env", build) if build else None
         self._python = os.path.join(self._venv, "bin", "python")
         self._pip = os.path.join(self._venv, "bin", "pip")
 
