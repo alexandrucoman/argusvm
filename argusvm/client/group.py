@@ -57,13 +57,8 @@ class InstallArgusCi(client_base.Command):
             default=os.environ.get("TEMPEST_BRANCH", "tags/7"),
             help="the required branch / revision of argus repository "
                  "(Default: tags/7)")
-
-        group = parser.add_mutually_exclusive_group()
-        group.add_argument(
-            "--no-venv", dest="setup_venv", action="store_false",
-            help="Install the requirements on the global environment")
-        group.add_argument(
-            "--build", dest="build", type=str,
+        parser.add_argument(
+            "--build", dest="build", type=str, required=True,
             help="The unique identifier for the current job."
         )
 

@@ -1,7 +1,11 @@
 """The commands used by the client actions."""
 
 import os
+import re
 
+from neutronclient.v2_0 import client as neutron_client
+
+from argusvm import resources as argus_resources
 from argusvm.worker import base as worker_base
 
 
@@ -46,6 +50,103 @@ class InstallTempest(worker_base.Command):
 
     REPO = 'git+https://github.com/openstack/tempest.git@%s'
 
+    def __init__(self, executor):
+        super(InstallTempest, self).__init__(executor=executor)
+        self._template = os.path.abspath(argus_resources.__path__[0])
+        self._config = os.path.join(self._venv, "etc", "tempest.conf")
+        self._replace = {}
+        self._neutron = None
+        self._glance = None
+
+    @property
+    def neutron(self):
+        """Expose the neutron client."""
+        if not self._neutron:
+            self._neutron = neutron_client.Client(
+                username=os.environ.get("OS_USERNAME"),
+                password=os.environ.get("OS_PASSWORD"),
+                tenant_name=os.environ.get("OS_TENANT_NAME"),
+                auth_url=os.environ.get("OS_AUTH_URL")
+            )
+        return self._neutron
+
+    @property
+    def config(self):
+        """Expose the tempest config."""
+        if not self._config:
+            argus_image = self._get_image_id()
+            self._config = {
+                "flavor_ref_alt": "m1.large",
+                "image_ref_alt": argus_image,
+                "flavor_ref": "m1.large",
+                "image_ref": argus_image,
+                "admin_tenant_id": self._get_tenant_id(),
+                "admin_tenant_name": os.environ.get("OS_TENANT_NAME"),
+                "admin_password": os.environ.get("OS_PASSWORD"),
+                "admin_username": os.environ.get("OS_USERNAME"),
+                "default_network": self._get_default_network(),
+                "public_router_id": self._get_router_id(),
+                "public_network_id": self._get_network_id(),
+            }
+        return self._config
+
+    def _get_default_network(self):
+        """Return the CIDR of the public network."""
+        public_id = self._get_network_id(name="public")
+        network = self.neutron.show_network(public_id).get("network")
+        for subnet_id in network.get("subnets"):
+            subnet = self.neutron.show_subnet(subnet_id).get("subnet")
+            if "cidr" in subnet:
+                return subnet["cidr"]
+
+    def _get_image_id(self, pattern="argus.*"):
+        """Return the image identifier for the first image that
+        matches the received pattern."""
+        regexp = re.compile(pattern)
+        raw_data, _ = self._execute(["glance", "image-list"])
+        for line in raw_data.splitlines():
+            try:
+                image_id, image_name = line.strip(" -+|").split('|')
+            except ValueError:
+                pass
+
+            if regexp.match(image_name):
+                return image_id.strip()
+
+    def _get_tenant_id(self):
+        """Return the tenant id for the current user."""
+        auth_info = self.neutron.get_auth_info()
+        return auth_info.get("auth_tenant_id")
+
+    def _get_network_id(self, name="public"):
+        """Get the identifier for the received network name."""
+        networks = self.neutron.list_networks()
+        for network in networks.get("networks", []):
+            if network["name"] == name:
+                return network["id"]
+
+    def _get_router_id(self, name="router1"):
+        """Get the identifier for the received router name."""
+        routers = self.neutron.list_routers()
+        for router in routers.get("routers", []):
+            if router["name"] == name:
+                return router["id"]
+
+    def _write_config(self):
+        """Create the Tempest config file."""
+        config = []
+        with open(self._template, "r") as template:
+            for line in template.readlines():
+                key, sep, value = line.partition("=")
+                if sep == "=":
+                    value = self.config.get(key, value)
+                    config.append("%s = %s" % (key, value))
+                else:
+                    config.append(line)
+
+        with open(self._config, "w") as config_file:
+            config_file.write("\n".join(config))
+
     def _work(self):
         """Install the tempest package and its requirements."""
         self._execute(["sudo", "-u", self.args["user"], self._pip,
@@ -55,8 +156,7 @@ class InstallTempest(worker_base.Command):
         """Executed once after the command running."""
         self._execute(["sudo", "-u", self.args["user"], self._python,
                        "-c", "import tempest"])
-        # TODO(alexandrucoman): Create the config file
-
+        self._write_config()
         super(InstallTempest, self)._epilogue()
 
 
