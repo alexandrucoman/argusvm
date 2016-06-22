@@ -5,8 +5,8 @@ import re
 
 from neutronclient.v2_0 import client as neutron_client
 
-from argusvm import resources as argus_resources
-from argusvm.worker import base as worker_base
+from arestor import resources as arestor_resources
+from arestor.worker import base as worker_base
 
 
 class SetupEnvironment(worker_base.Command):
@@ -52,7 +52,7 @@ class InstallTempest(worker_base.Command):
 
     def __init__(self, executor):
         super(InstallTempest, self).__init__(executor=executor)
-        self._template = os.path.abspath(argus_resources.__path__[0])
+        self._template = os.path.abspath(arestor_resources.__path__[0])
         self._config = os.path.join(self._venv, "etc", "tempest.conf")
         self._replace = {}
         self._neutron = None

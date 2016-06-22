@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-"""ArgusVM install script."""
+"""Arestor install script."""
 
 try:
     from setuptools import setup
@@ -8,13 +8,13 @@ except ImportError:
 
 
 setup(
-    name="argusvm",
+    name="arestor",
     version="0.1",
-    description="Various tools for the Arugs-CI framework.",
+    description="Various tools for the Argus-CI framework.",
     long_description=open("README.md").read(),
     author="Cloudbase Solutions Srl",
     url="http://www.cloudbase.it/",
-    packages=["argusvm"],
-    scripts=["scripts/arguscli"],
+    packages=["arestor"],
+    scripts=["scripts/arestor"],
     requires=["six"]
 )
