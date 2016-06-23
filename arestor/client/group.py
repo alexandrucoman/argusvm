@@ -10,6 +10,10 @@ class InstallArgusCiDependences(client_base.Command):
 
     """Install the Argus-CI dependences on the current machine."""
 
+    def on_task_fail(self, task, exc):
+        """Callback for task fail."""
+        self.logger.error("Task %s failed: %s", task.name, exc)
+
     def setup(self):
         """Extend the parser configuration in order to expose all
         the received commands.
@@ -46,7 +50,6 @@ class InstallArgusCi(client_base.Command):
 
         parser.add_argument("--user", dest="user", default="root",
                             help="Run the commands as specified user.")
-
         parser.add_argument(
             "--argus-branch", dest="argus_branch",
             default=os.environ.get("ARGUS_BRANCH", "master"),
@@ -68,6 +71,9 @@ class InstallArgusCi(client_base.Command):
         """Callback for task fail."""
         self.__status = False
         self.logger.error("Task %s failed: %s", task.name, exc)
+        self.logger.info("Please check if all the required dependences are"
+                         "installed by running the following command: "
+                         "'arestor install dependences'")
 
     def _work(self):
         """Install the Argus-CI on the current machine."""

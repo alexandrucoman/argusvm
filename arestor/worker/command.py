@@ -2,10 +2,10 @@
 
 import os
 import re
+import shutil
 
 from neutronclient.v2_0 import client as neutron_client
 
-from arestor import resources as arestor_resources
 from arestor.worker import base as worker_base
 
 
@@ -27,21 +27,27 @@ class CreateEnvironment(worker_base.Command):
 
     def _work(self):
         """Create the virtual environment for Argus-Ci and Tempest."""
-        if not self._setup_venv:
+        if not self._venv:
+            self.logger.warning("Invalid information provided regarding "
+                                "the virtual environment")
             return
 
         if os.path.isdir(self._venv):
             self.logger.warning("The virtual environment already exists. %s",
                                 self._venv)
-        else:
-            self._execute(["sudo", "-u", self.args["user"], "virtualenv",
-                           self._venv, "--python", "/usr/bin/python2.7"])
+            try:
+                shutil.rmtree(self._venv)
+            except OSError as exc:
+                self.logger.warning("Failed to remove the old "
+                                    "environment: %s", exc)
+
+        self._execute(["sudo", "-u", self.args["user"], "virtualenv",
+                       self._venv, "--python", "/usr/bin/python2.7"])
 
     def _epilogue(self):
         """Executed once after the command running."""
-        if self._setup_venv:
-            self._execute(["sudo", "-u", self.args["user"],
-                           self._pip, "install", "pip", "--upgrade"])
+        self._execute(["sudo", "-u", self.args["user"],
+                       self._pip, "install", "pip", "--upgrade"])
 
 
 class InstallTempest(worker_base.Command):
@@ -52,7 +58,8 @@ class InstallTempest(worker_base.Command):
 
     def __init__(self, executor):
         super(InstallTempest, self).__init__(executor=executor)
-        self._template = os.path.abspath(arestor_resources.__path__[0])
+
+        self._template = os.path.join(self._resources, "tempest.conf")
         self._config = os.path.join(self._venv, "etc", "tempest.conf")
         self._replace = {}
         self._neutron = None
