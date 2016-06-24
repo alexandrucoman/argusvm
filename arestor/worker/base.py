@@ -13,8 +13,6 @@ import time
 
 import six
 
-from arestor import resources as arestor_resources
-
 
 def do_nothing():
     """Do nothing"""
@@ -65,7 +63,7 @@ class Command(Worker):
         self._retry_interval = self._executor.args.get('retry_interval', 0)
 
         build = self._executor.args.get("build", "")
-        self._resources = os.path.abspath(arestor_resources.__path__[0])
+        self._resources = os.path.join(sys.prefix, "share", "doc", "arestor")
         self._venv = os.path.join("/tmp/argus-env", build) if build else ""
         self._python = os.path.join(self._venv, "bin", "python")
         self._pip = os.path.join(self._venv, "bin", "pip")
